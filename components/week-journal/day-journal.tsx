@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { HOPEWAY_SCHEDULE, type DayKey } from "@/data/hopeway-schedule";
+import { getScheduleForTrack, SCHEDULE_TRACKS, type ScheduleTrack } from "@/data/schedule-tracks";
+import type { DayKey } from "@/data/hopeway-schedule";
 import { TodaysSchedule } from "@/components/week-journal/todays-schedule";
 import { WeekendReflection } from "@/components/week-journal/weekend-reflection";
 import {
@@ -24,9 +25,10 @@ const DAY_LABELS: Record<DayKey, string> = {
 
 interface DayJournalProps {
   dayKey: DayKey;
+  track?: ScheduleTrack;
 }
 
-export function DayJournal({ dayKey }: DayJournalProps) {
+export function DayJournal({ dayKey, track = "php" }: DayJournalProps) {
   const [date, setDate] = useState<string>("");
   const [logs, setLogs] = useState<Record<string, GroupLog>>({});
   const [reflection, setReflection] = useState<string>("");
@@ -50,8 +52,10 @@ export function DayJournal({ dayKey }: DayJournalProps) {
     }
   }, [dayKey]);
 
-  const schedule = HOPEWAY_SCHEDULE[dayKey];
-  const isWeekend = dayKey === "saturday" || dayKey === "sunday";
+  const schedule = getScheduleForTrack({ track, dayKey });
+  const trackLabel = SCHEDULE_TRACKS[track].label;
+  const isWeekend =
+    track === "php" && (dayKey === "saturday" || dayKey === "sunday");
 
   const handleLogChange = (itemId: string, update: Partial<GroupLog>) => {
     const next = { ...logs };
@@ -87,7 +91,7 @@ export function DayJournal({ dayKey }: DayJournalProps) {
           <h1 className="text-3xl font-bold text-slate-800">
             {DAY_LABELS[dayKey]} — {format(parseISO(date), "MMMM d, yyyy")}
           </h1>
-          <p className="text-slate-600 mt-1">Hopeway PHP Track #2</p>
+          <p className="text-slate-600 mt-1">Hopeway {trackLabel}</p>
         </div>
         <div className="flex gap-2">
           <Link

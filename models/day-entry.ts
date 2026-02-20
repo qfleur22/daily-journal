@@ -44,6 +44,9 @@ export interface DayEntry {
   breakfastAte: boolean | null;
   dinnerNotes: string | null;
   bedtimeTaperDownTime: string | null;
+  bedtimeGoalsForTomorrow: string | null;
+  bedtimeWorries: string | null;
+  bedtimeNextAction: string | null;
   weekendWakeupTime: string | null;
   weekendLunchTime: string | null;
   weekendDinnerTime: string | null;
@@ -67,6 +70,9 @@ export interface ScheduleTimeBlock {
   notes: string;
   timeStart: string;
   timeEnd: string;
+  source?: "calendar" | "user";
+  attended?: boolean;
+  calendarEventId?: string;
 }
 
 export interface ScheduleGroup {
@@ -82,6 +88,7 @@ export interface Meal {
   id: string;
   mealType: MealType | null;
   mealTime: string | null;
+  mealTimeEnd: string | null;
   arfidAppetite: number | null;
   foodWins: {
     calories: boolean;

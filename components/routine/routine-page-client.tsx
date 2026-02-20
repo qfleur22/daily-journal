@@ -67,6 +67,9 @@ export function RoutinePageClient({
   const [nightmareIntensity, setNightmareIntensity] = useState<number | null>(null);
   const [dreamThemesOrRemember, setDreamThemesOrRemember] = useState<string>("");
   const [taperDownTime, setTaperDownTime] = useState<string>("");
+  const [bedtimeGoalsForTomorrow, setBedtimeGoalsForTomorrow] = useState<string>("");
+  const [bedtimeWorries, setBedtimeWorries] = useState<string>("");
+  const [bedtimeNextAction, setBedtimeNextAction] = useState<string>("");
   const [savedFeedback, setSavedFeedback] = useState(false);
   const [participationPlan, setParticipationPlan] =
     useState<ParticipationPlan | null>(null);
@@ -99,6 +102,9 @@ export function RoutinePageClient({
     }
     if (routineType === "bedtime") {
       setTaperDownTime(entry.bedtimeTaperDownTime ?? "");
+      setBedtimeGoalsForTomorrow(entry.bedtimeGoalsForTomorrow ?? "");
+      setBedtimeWorries(entry.bedtimeWorries ?? "");
+      setBedtimeNextAction(entry.bedtimeNextAction ?? "");
     }
     setBurnoutStage(entry.burnoutStage ?? null);
     setWindowOfTolerance(entry.windowOfTolerance ?? null);
@@ -246,6 +252,9 @@ export function RoutinePageClient({
                 completedItemIds: Array.from(completedIds),
               },
               bedtimeTaperDownTime: taperDownTime || null,
+              bedtimeGoalsForTomorrow: bedtimeGoalsForTomorrow || null,
+              bedtimeWorries: bedtimeWorries || null,
+              bedtimeNextAction: bedtimeNextAction || null,
             },
     });
     setSavedFeedback(true);
@@ -531,6 +540,50 @@ export function RoutinePageClient({
                   </li>
                 ))}
               </ul>
+              {routineType === "bedtime" && category === "Close loops" && (
+                <div className="mt-4 p-4 rounded-lg bg-white/60 border border-thistle/40 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Goals for tomorrow
+                    </label>
+                    <textarea
+                      value={bedtimeGoalsForTomorrow}
+                      onChange={(e) => setBedtimeGoalsForTomorrow(e.target.value)}
+                      placeholder="1–3 tiny goals for tomorrow..."
+                      className="w-full px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80 min-h-[60px] text-sm"
+                      rows={2}
+                    />
+                  </div>
+                  {(tier === 1 || tier === 2) && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        Worries (container + revisit time)
+                      </label>
+                      <textarea
+                        value={bedtimeWorries}
+                        onChange={(e) => setBedtimeWorries(e.target.value)}
+                        placeholder="Write worries down..."
+                        className="w-full px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80 min-h-[60px] text-sm"
+                        rows={2}
+                      />
+                    </div>
+                  )}
+                  {tier === 2 && (
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">
+                        If urgent: next action only
+                      </label>
+                      <textarea
+                        value={bedtimeNextAction}
+                        onChange={(e) => setBedtimeNextAction(e.target.value)}
+                        placeholder="Write next action, not whole problem..."
+                        className="w-full px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80 min-h-[60px] text-sm"
+                        rows={2}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

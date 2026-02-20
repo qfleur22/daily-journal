@@ -1,8 +1,8 @@
 import {
-  HOPEWAY_SCHEDULE,
   type DayKey,
   type ScheduleItem,
 } from "@/data/hopeway-schedule";
+import { RESIDENTIAL_SCHEDULE } from "@/data/residential-schedule";
 import { ScheduleGroup } from "@/models/day-entry";
 
 function parseTimeToMinutes(timeStr: string): number {
@@ -78,7 +78,7 @@ export function getHopewayScheduleForDay({ date }: { date: string }): ScheduleGr
     "saturday",
   ];
   const dayKey = dayKeys[dayNum];
-  const items = HOPEWAY_SCHEDULE[dayKey] ?? [];
+  const items = RESIDENTIAL_SCHEDULE[dayKey] ?? [];
   return items.map((item, i) =>
     hopewayItemToScheduleGroup(item, i, items)
   );
@@ -86,7 +86,7 @@ export function getHopewayScheduleForDay({ date }: { date: string }): ScheduleGr
 
 export function getHopewayScheduleForDayName({ day }: { day: string }): ScheduleGroup[] {
   const dayKey = day.toLowerCase() as DayKey;
-  const items = HOPEWAY_SCHEDULE[dayKey] ?? [];
+  const items = RESIDENTIAL_SCHEDULE[dayKey] ?? [];
   return items.map((item, i) =>
     hopewayItemToScheduleGroup(item, i, items)
   );

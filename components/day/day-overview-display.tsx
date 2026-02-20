@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { DayEntry, type BurnoutStage } from "@/models/day-entry";
+import { MealSummaryContent } from "@/components/day/meal-summary";
 
 const ROUTINE_TIER_LABELS: Record<number, string> = {
   0: "low spoons",
@@ -211,46 +212,46 @@ export function DayOverviewDisplay({
           <dd className="font-medium">{entry.dinnerNotes}</dd>
         </div>
       )}
+      {(entry.bedtimeGoalsForTomorrow ||
+        entry.bedtimeWorries ||
+        entry.bedtimeNextAction) && (
+        <div className="mt-4 pt-4 border-t border-thistle/40">
+          <dt className="text-sm text-slate-600 mb-2">Bedtime close loops</dt>
+          <dd className="space-y-2">
+            {entry.bedtimeGoalsForTomorrow && (
+              <p>
+                <span className="text-slate-500">Goals:</span>{" "}
+                {entry.bedtimeGoalsForTomorrow}
+              </p>
+            )}
+            {entry.bedtimeWorries && (
+              <p>
+                <span className="text-slate-500">Worries:</span>{" "}
+                {entry.bedtimeWorries}
+              </p>
+            )}
+            {entry.bedtimeNextAction && (
+              <p>
+                <span className="text-slate-500">Next action:</span>{" "}
+                {entry.bedtimeNextAction}
+              </p>
+            )}
+          </dd>
+        </div>
+      )}
       {showMealsSummary && (entry.meals?.length ?? 0) > 0 && (
         <div className="mt-4 pt-4 border-t border-thistle/40">
           <dt className="text-sm text-slate-600 mb-3">Meals</dt>
           <dd className="space-y-4">
-            {entry.meals?.map((meal, i) => (
+            {entry.meals?.map((meal) => (
               <div
                 key={meal.id}
                 className="rounded-lg border border-thistle/40 p-3 bg-white/50"
               >
-                <p className="font-medium text-slate-700 mb-1">
-                  {meal.mealType
-                    ? meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)
-                    : "Meal"}
-                  {meal.mealTime && ` (${meal.mealTime})`}
-                  {meal.whatIAte && ` — ${meal.whatIAte}`}
-                </p>
-                <p className="text-sm text-slate-600">
+                <MealSummaryContent meal={meal} />
+                <p className="text-sm text-slate-600 mt-2">
                   ARFID/Appetite: {meal.arfidAppetite ?? "—"}
                 </p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {[
-                    ["calories", meal.foodWins.calories],
-                    ["protein", meal.foodWins.protein],
-                    ["salt", meal.foodWins.salt],
-                    ["used safe food", meal.foodWins.usedSafeFood],
-                    ["drinkable option", meal.foodWins.drinkableOption],
-                    ["2+ bites", meal.foodWins.hadAtLeast2Bites],
-                    ["ate until full", meal.foodWins.ateUntilFull],
-                  ].map(
-                    ([label, checked]) =>
-                      checked && (
-                        <span
-                          key={String(label)}
-                          className="text-xs px-2 py-0.5 rounded-full bg-pastel-petal/40"
-                        >
-                          {label}
-                        </span>
-                      )
-                  )}
-                </div>
               </div>
             ))}
           </dd>

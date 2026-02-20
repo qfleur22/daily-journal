@@ -75,35 +75,77 @@ export function MealLog({
             </option>
           ))}
         </select>
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-slate-600">Time</label>
-          {meal.mealType === "lunch" && (
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-slate-600">Time</label>
+            {meal.mealType === "lunch" && (
+              <button
+                type="button"
+                onClick={() => onUpdate({ mealTime: "12:00", mealTimeEnd: "13:00" })}
+                className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium"
+              >
+                Planned (Noon)
+              </button>
+            )}
+            {meal.mealType === "dinner" && (
+              <button
+                type="button"
+                onClick={() => {
+                  const start = "18:00";
+                  onUpdate({ mealTime: start, mealTimeEnd: "19:00" });
+                }}
+                className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium"
+              >
+                6pm (1 hr)
+              </button>
+            )}
+            <input
+              type="time"
+              value={meal.mealTime ?? ""}
+              onChange={(e) => onUpdate({ mealTime: e.target.value || null })}
+              className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-white/80 text-sm"
+            />
             <button
               type="button"
-              onClick={() => onUpdate({ mealTime: "12:00" })}
+              onClick={() => {
+                const now = new Date();
+                const h = String(now.getHours()).padStart(2, "0");
+                const m = String(now.getMinutes()).padStart(2, "0");
+                const start = `${h}:${m}`;
+                const needsEnd =
+                  meal.mealType === "dinner" || meal.mealType === "lunch";
+                if (needsEnd) {
+                  const endMins =
+                    (now.getHours() * 60 + now.getMinutes() + 60) % (24 * 60);
+                  const endH = Math.floor(endMins / 60);
+                  const endMm = endMins % 60;
+                  onUpdate({
+                    mealTime: start,
+                    mealTimeEnd: `${String(endH).padStart(2, "0")}:${String(endMm).padStart(2, "0")}`,
+                  });
+                } else {
+                  onUpdate({ mealTime: start });
+                }
+              }}
               className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium"
             >
-              Planned (Noon)
+              Now
             </button>
-          )}
-          <input
-            type="time"
-            value={meal.mealTime ?? ""}
-            onChange={(e) => onUpdate({ mealTime: e.target.value || null })}
-            className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-white/80 text-sm"
-          />
-          <button
-            type="button"
-            onClick={() => {
-              const now = new Date();
-              const h = String(now.getHours()).padStart(2, "0");
-              const m = String(now.getMinutes()).padStart(2, "0");
-              onUpdate({ mealTime: `${h}:${m}` });
-            }}
-            className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium"
-          >
-            Now
-          </button>
+          </div>
+          {(meal.mealType === "dinner" || meal.mealType === "lunch") &&
+            meal.mealTime && (
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-slate-600">End</label>
+                <input
+                  type="time"
+                  value={meal.mealTimeEnd ?? ""}
+                  onChange={(e) =>
+                    onUpdate({ mealTimeEnd: e.target.value || null })
+                  }
+                  className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-white/80 text-sm"
+                />
+              </div>
+            )}
         </div>
         {onRemove && (
           <button

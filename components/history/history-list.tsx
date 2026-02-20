@@ -10,6 +10,7 @@ import {
   type RoutineTier,
 } from "@/models/day-entry";
 import { formatTimeForDisplay } from "@/utils/format-time";
+import { MealSummaryContent } from "@/components/day/meal-summary";
 
 const BURNOUT_STAGE_STYLES: Record<BurnoutStage, string> = {
   Green: "border-green-400 bg-green-50 text-green-800",
@@ -230,18 +231,8 @@ function HistoryEntryCard({ entry, onNavigate }: HistoryEntryCardProps) {
               </h3>
               <ul className="text-sm space-y-2">
                 {meals.map((meal) => (
-                  <li key={meal.id} className="flex flex-wrap gap-x-2">
-                    <span className="font-medium">
-                      {meal.mealType
-                        ? meal.mealType.charAt(0).toUpperCase() +
-                          meal.mealType.slice(1)
-                        : "Meal"}
-                      {meal.mealTime &&
-                        ` (${formatTimeForDisplay(meal.mealTime)})`}
-                    </span>
-                    {meal.whatIAte && (
-                      <span className="text-slate-600">— {meal.whatIAte}</span>
-                    )}
+                  <li key={meal.id} className="rounded-lg border border-thistle/40 p-3 bg-white/50">
+                    <MealSummaryContent meal={meal} />
                   </li>
                 ))}
               </ul>
@@ -319,14 +310,40 @@ function HistoryEntryCard({ entry, onNavigate }: HistoryEntryCardProps) {
               </section>
             )}
 
-          {entry.bedtimeTaperDownTime && (
+          {(entry.bedtimeTaperDownTime ||
+            entry.bedtimeGoalsForTomorrow ||
+            entry.bedtimeWorries ||
+            entry.bedtimeNextAction) && (
             <section>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
-                Bedtime taper
+                Bedtime
               </h3>
-              <p className="text-sm">
-                {formatTimeForDisplay(entry.bedtimeTaperDownTime)}
-              </p>
+              <div className="text-sm space-y-2">
+                {entry.bedtimeTaperDownTime && (
+                  <p>
+                    <span className="text-slate-500">Taper:</span>{" "}
+                    {formatTimeForDisplay(entry.bedtimeTaperDownTime)}
+                  </p>
+                )}
+                {entry.bedtimeGoalsForTomorrow && (
+                  <p>
+                    <span className="text-slate-500">Goals:</span>{" "}
+                    {entry.bedtimeGoalsForTomorrow}
+                  </p>
+                )}
+                {entry.bedtimeWorries && (
+                  <p>
+                    <span className="text-slate-500">Worries:</span>{" "}
+                    {entry.bedtimeWorries}
+                  </p>
+                )}
+                {entry.bedtimeNextAction && (
+                  <p>
+                    <span className="text-slate-500">Next action:</span>{" "}
+                    {entry.bedtimeNextAction}
+                  </p>
+                )}
+              </div>
             </section>
           )}
         </div>

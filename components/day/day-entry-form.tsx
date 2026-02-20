@@ -140,6 +140,14 @@ export function DayEntryForm({
         weekendLunchTime={entry.weekendLunchTime}
         weekendDinnerTime={entry.weekendDinnerTime}
         onWeekendTimesChange={(updates) => onUpdate(updates)}
+        morningRoutine={entry.morningRoutine}
+        bedtimeRoutine={entry.bedtimeRoutine}
+        onMorningRoutineChange={(routine) =>
+          onUpdate({ morningRoutine: routine })
+        }
+        onBedtimeRoutineChange={(routine) =>
+          onUpdate({ bedtimeRoutine: routine })
+        }
       />
     </div>
   );

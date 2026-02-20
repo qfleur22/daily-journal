@@ -13,14 +13,17 @@ const DEFAULT_FOOD_WINS: Meal["foodWins"] = {
 export function createMeal({
   mealType = null,
   mealTime = null,
+  mealTimeEnd = null,
 }: {
   mealType?: MealType | null;
   mealTime?: string | null;
+  mealTimeEnd?: string | null;
 }): Meal {
   return {
     id: `meal-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     mealType,
     mealTime,
+    mealTimeEnd,
     arfidAppetite: 5,
     foodWins: { ...DEFAULT_FOOD_WINS },
     whatIAte: "",
