@@ -1,5 +1,7 @@
 import { DayDetail } from "@/components/day/day-detail";
 
+export const runtime = "edge";
+
 interface DayEditPageProps {
   params: Promise<{ id: string }>;
 }

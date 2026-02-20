@@ -11,7 +11,7 @@ export const RESIDENTIAL_SCHEDULE: Record<DayKey, ScheduleItem[]> = {
     { id: "res-sun-6", time: "1:00–4:00 PM", options: [{ name: "Free Time / Visitation (See Unit Schedule)", location: "" }] },
     { id: "res-sun-7", time: "5:30 PM", options: [{ name: "Dinner", location: "" }], isBreak: true },
     { id: "res-sun-8", time: "6:30 PM", options: [{ name: "Free Time", location: "" }] },
-    { id: "res-sun-9", time: "8:00 PM", options: [{ name: "Meds/Wind Down", location: "" }] },
+    { id: "res-sun-9", time: "8:00 PM", options: [{ name: "Wind down", location: "" }] },
   ],
   monday: [
     { id: "res-mon-1", time: "8:00 AM", options: [{ name: "Breakfast", location: "" }], isBreak: true },
@@ -25,7 +25,7 @@ export const RESIDENTIAL_SCHEDULE: Record<DayKey, ScheduleItem[]> = {
     { id: "res-mon-9", time: "4:00 PM", options: [{ name: "End of Programming", location: "" }] },
     { id: "res-mon-10", time: "5:30 PM", options: [{ name: "Dinner", location: "" }], isBreak: true },
     { id: "res-mon-11", time: "6:30 PM", options: [{ name: "Free Time", location: "" }] },
-    { id: "res-mon-12", time: "8:00 PM", options: [{ name: "Meds/Wind Down", location: "" }] },
+    { id: "res-mon-12", time: "8:00 PM", options: [{ name: "Wind down", location: "" }] },
   ],
   tuesday: [
     { id: "res-tue-1", time: "8:00 AM", options: [{ name: "Breakfast", location: "" }], isBreak: true },
@@ -39,7 +39,7 @@ export const RESIDENTIAL_SCHEDULE: Record<DayKey, ScheduleItem[]> = {
     { id: "res-tue-9", time: "4:00 PM", options: [{ name: "End of Programming", location: "" }] },
     { id: "res-tue-10", time: "5:30 PM", options: [{ name: "Dinner", location: "" }], isBreak: true },
     { id: "res-tue-11", time: "6:30 PM", options: [{ name: "Free Time", location: "" }] },
-    { id: "res-tue-12", time: "8:00 PM", options: [{ name: "Meds/Wind Down", location: "" }] },
+    { id: "res-tue-12", time: "8:00 PM", options: [{ name: "Wind down", location: "" }] },
   ],
   wednesday: [
     { id: "res-wed-1", time: "8:00 AM", options: [{ name: "Breakfast", location: "" }], isBreak: true },
@@ -53,7 +53,7 @@ export const RESIDENTIAL_SCHEDULE: Record<DayKey, ScheduleItem[]> = {
     { id: "res-wed-9", time: "4:00 PM", options: [{ name: "End of Programming", location: "" }] },
     { id: "res-wed-10", time: "5:30 PM", options: [{ name: "Dinner", location: "" }], isBreak: true },
     { id: "res-wed-11", time: "6:30 PM", options: [{ name: "Free Time", location: "" }] },
-    { id: "res-wed-12", time: "8:00 PM", options: [{ name: "Meds/Wind Down", location: "" }] },
+    { id: "res-wed-12", time: "8:00 PM", options: [{ name: "Wind down", location: "" }] },
   ],
   thursday: [
     { id: "res-thu-1", time: "8:00 AM", options: [{ name: "Breakfast", location: "" }], isBreak: true },
@@ -67,7 +67,7 @@ export const RESIDENTIAL_SCHEDULE: Record<DayKey, ScheduleItem[]> = {
     { id: "res-thu-9", time: "4:00 PM", options: [{ name: "End of Programming", location: "" }] },
     { id: "res-thu-10", time: "5:30 PM", options: [{ name: "Dinner", location: "" }], isBreak: true },
     { id: "res-thu-11", time: "6:30 PM", options: [{ name: "Free Time", location: "" }] },
-    { id: "res-thu-12", time: "8:00 PM", options: [{ name: "Meds/Wind Down", location: "" }] },
+    { id: "res-thu-12", time: "8:00 PM", options: [{ name: "Wind down", location: "" }] },
   ],
   friday: [
     { id: "res-fri-1", time: "8:00 AM", options: [{ name: "Breakfast", location: "" }], isBreak: true },
@@ -81,7 +81,7 @@ export const RESIDENTIAL_SCHEDULE: Record<DayKey, ScheduleItem[]> = {
     { id: "res-fri-9", time: "4:00 PM", options: [{ name: "End of Programming", location: "" }] },
     { id: "res-fri-10", time: "5:30 PM", options: [{ name: "Dinner", location: "" }], isBreak: true },
     { id: "res-fri-11", time: "6:30 PM", options: [{ name: "Free Time", location: "" }] },
-    { id: "res-fri-12", time: "8:00 PM", options: [{ name: "Meds/Wind Down", location: "" }] },
+    { id: "res-fri-12", time: "8:00 PM", options: [{ name: "Wind down", location: "" }] },
   ],
   saturday: [
     { id: "res-sat-1", time: "8:00 AM", options: [{ name: "Breakfast", location: "" }], isBreak: true },
@@ -92,6 +92,6 @@ export const RESIDENTIAL_SCHEDULE: Record<DayKey, ScheduleItem[]> = {
     { id: "res-sat-6", time: "1:00–4:00 PM", options: [{ name: "See Unit Schedule", location: "" }] },
     { id: "res-sat-7", time: "5:30 PM", options: [{ name: "Dinner", location: "" }], isBreak: true },
     { id: "res-sat-8", time: "6:30 PM", options: [{ name: "Free Time", location: "" }] },
-    { id: "res-sat-9", time: "8:00 PM", options: [{ name: "Meds/Wind Down", location: "" }] },
+    { id: "res-sat-9", time: "8:00 PM", options: [{ name: "Wind down", location: "" }] },
   ],
 };

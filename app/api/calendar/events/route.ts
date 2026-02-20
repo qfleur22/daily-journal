@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const CALENDAR_ID = "quinndelafleur@gmail.com";
+export const runtime = "edge";
+
+/** Use "primary" to fetch from the authenticated user's main calendar. */
+const CALENDAR_ID = "primary";
 
 export interface CalendarEventBrief {
   id: string;
@@ -28,9 +31,10 @@ function parseEventTime(
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { accessToken, date } = body as {
+    const { accessToken, date, calendarId } = body as {
       accessToken: string;
       date: string;
+      calendarId?: string;
     };
 
     if (!accessToken || !date) {
@@ -40,6 +44,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const calendar = calendarId ?? CALENDAR_ID;
     const [year, month, day] = date.split("-").map(Number);
     const timeMin = new Date(year, month - 1, day, 0, 0, 0);
     const timeMax = new Date(year, month - 1, day, 23, 59, 59);
@@ -47,7 +52,7 @@ export async function POST(request: NextRequest) {
     const timeMaxStr = timeMax.toISOString();
 
     const url = new URL(
-      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CALENDAR_ID)}/events`
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendar)}/events`
     );
     url.searchParams.set("timeMin", timeMinStr);
     url.searchParams.set("timeMax", timeMaxStr);
@@ -61,9 +66,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!res.ok) {
-      const err = await res.text();
+      const errText = await res.text();
+      let details = errText;
+      try {
+        const errJson = JSON.parse(errText) as { error?: { message?: string } };
+        details = errJson.error?.message ?? errText;
+      } catch {
+        // keep raw text
+      }
+      const hint =
+        res.status === 403
+          ? " Ensure Google Calendar API is enabled in your Google Cloud project and you're signed in with the correct account."
+          : "";
       return NextResponse.json(
-        { error: "Calendar API error", details: err },
+        { error: "Calendar API error", details: details + hint },
         { status: res.status }
       );
     }

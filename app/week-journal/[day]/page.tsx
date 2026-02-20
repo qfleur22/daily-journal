@@ -1,6 +1,8 @@
 import { DayJournal } from "@/components/week-journal/day-journal";
 import type { ScheduleTrack } from "@/data/schedule-tracks";
 
+export const runtime = "edge";
+
 interface DayPageProps {
   params: Promise<{ day: string }>;
   searchParams: Promise<{ track?: string }>;

@@ -5,6 +5,92 @@ import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
 import { type ScheduleTimeBlock } from "@/models/day-entry";
 
 const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? "";
+const AUTH_STORAGE_KEY = "daily-journal-google-auth";
+
+interface StoredAuth {
+  email: string;
+  accessToken: string;
+  expiresAt: number;
+}
+
+function getStoredAccessToken(): string | null {
+  try {
+    const stored = sessionStorage.getItem(AUTH_STORAGE_KEY);
+    if (!stored) {
+      return null;
+    }
+    const parsed = JSON.parse(stored) as StoredAuth;
+    if (parsed.expiresAt <= Date.now()) {
+      return null;
+    }
+    return parsed.accessToken;
+  } catch {
+    return null;
+  }
+}
+
+async function syncWithToken({
+  accessToken,
+  date,
+  scheduleBlocks,
+  onScheduleBlocksChange,
+  setError,
+}: {
+  accessToken: string;
+  date: string;
+  scheduleBlocks: ScheduleTimeBlock[];
+  onScheduleBlocksChange: (blocks: ScheduleTimeBlock[]) => void;
+  setError: (err: string | null) => void;
+}): Promise<boolean> {
+  setError(null);
+  const res = await fetch("/api/calendar/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accessToken, date }),
+  });
+  const data = await res.json();
+
+  if (!res.ok) {
+    setError(data.error ?? data.details ?? "Failed to fetch events");
+    return false;
+  }
+
+  const existingCalendarIds = new Set(
+    (scheduleBlocks ?? [])
+      .filter((b) => b.calendarEventId)
+      .map((b) => b.calendarEventId)
+  );
+
+  const newBlocks: ScheduleTimeBlock[] = (data.events ?? [])
+    .map(
+      (ev: {
+        id: string;
+        title: string;
+        timeStart: string;
+        timeEnd: string;
+      }) => {
+        if (existingCalendarIds.has(ev.id)) {
+          return null;
+        }
+        return {
+          id: `block-cal-${ev.id}-${Date.now()}`,
+          title: ev.title,
+          notes: "",
+          timeStart: ev.timeStart,
+          timeEnd: ev.timeEnd,
+          source: "calendar" as const,
+          attended: false,
+          calendarEventId: ev.id,
+        };
+      }
+    )
+    .filter(Boolean);
+
+  if (newBlocks.length > 0) {
+    onScheduleBlocksChange([...(scheduleBlocks ?? []), ...newBlocks]);
+  }
+  return true;
+}
 
 interface CalendarSyncButtonProps {
   date: string;
@@ -26,55 +112,16 @@ function CalendarSyncButtonInner({
     scope: "https://www.googleapis.com/auth/calendar.readonly",
     onSuccess: async (tokenResponse) => {
       setIsSyncing(true);
-      setError(null);
-      try {
-        const res = await fetch("/api/calendar/events", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            accessToken: tokenResponse.access_token,
-            date,
-          }),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          setError(data.error ?? data.details ?? "Failed to fetch events");
-          return;
-        }
-
-        const existingCalendarIds = new Set(
-          (scheduleBlocks ?? [])
-            .filter((b) => b.calendarEventId)
-            .map((b) => b.calendarEventId)
-        );
-
-        const newBlocks: ScheduleTimeBlock[] = (data.events ?? []).map(
-          (ev: { id: string; title: string; timeStart: string; timeEnd: string }) => {
-            if (existingCalendarIds.has(ev.id)) {
-              return null;
-            }
-            return {
-              id: `block-cal-${ev.id}-${Date.now()}`,
-              title: ev.title,
-              notes: "",
-              timeStart: ev.timeStart,
-              timeEnd: ev.timeEnd,
-              source: "calendar" as const,
-              attended: false,
-              calendarEventId: ev.id,
-            };
-          }
-        ).filter(Boolean);
-
-        if (newBlocks.length > 0) {
-          onScheduleBlocksChange([...(scheduleBlocks ?? []), ...newBlocks]);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Sync failed");
-      } finally {
-        setIsSyncing(false);
+      const ok = await syncWithToken({
+        accessToken: tokenResponse.access_token,
+        date,
+        scheduleBlocks,
+        onScheduleBlocksChange,
+        setError,
+      });
+      setIsSyncing(false);
+      if (!ok) {
+        return;
       }
     },
     onError: () => {
@@ -83,11 +130,33 @@ function CalendarSyncButtonInner({
     },
   });
 
+  const handleSync = async () => {
+    const storedToken = getStoredAccessToken();
+    if (storedToken) {
+      setIsSyncing(true);
+      try {
+        await syncWithToken({
+          accessToken: storedToken,
+          date,
+          scheduleBlocks,
+          onScheduleBlocksChange,
+          setError,
+        });
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Sync failed");
+      } finally {
+        setIsSyncing(false);
+      }
+      return;
+    }
+    login();
+  };
+
   return (
     <div className="flex flex-col gap-1">
       <button
         type="button"
-        onClick={() => login()}
+        onClick={handleSync}
         disabled={disabled ?? isSyncing}
         className="px-4 py-2 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium disabled:opacity-60"
       >
