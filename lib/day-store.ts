@@ -40,7 +40,12 @@ function loadEntries(): DayEntry[] {
     if (!raw) {
       return [];
     }
-    const entries: DayEntry[] = JSON.parse(raw);
+    let entries: DayEntry[] = JSON.parse(raw);
+    const deduped = deduplicateEntriesByDate(entries);
+    if (deduped.length < entries.length) {
+      entries = deduped;
+      saveEntries(entries);
+    }
     return entries.map((e) => ({
       ...e,
       meals: (e.meals ?? []).map((m) => {
@@ -74,6 +79,7 @@ function loadEntries(): DayEntry[] {
       weekendWakeupTime: e.weekendWakeupTime ?? null,
       weekendLunchTime: e.weekendLunchTime ?? null,
       weekendDinnerTime: e.weekendDinnerTime ?? null,
+      bedtimeTime: (e as { bedtimeTime?: string | null }).bedtimeTime ?? null,
       freeTimeActivities: (
         (e as { freeTimeActivities?: FreeTimeActivity[] }).freeTimeActivities ??
         []
@@ -103,9 +109,18 @@ export function getEntryByDate({ date }: { date: string }): DayEntry | null {
   return entries.find((e) => e.date === date) ?? null;
 }
 
-export function createOrGetTodayEntry(): DayEntry {
-  const today = new Date().toISOString().slice(0, 10);
-  const existing = getEntryByDate({ date: today });
+function deduplicateEntriesByDate(entries: DayEntry[]): DayEntry[] {
+  const byDate = new Map<string, DayEntry>();
+  for (const e of entries) {
+    if (!byDate.has(e.date)) {
+      byDate.set(e.date, e);
+    }
+  }
+  return Array.from(byDate.values());
+}
+
+export function createOrGetEntryForDate({ date }: { date: string }): DayEntry {
+  const existing = getEntryByDate({ date });
   if (existing) {
     return existing;
   }
@@ -118,15 +133,14 @@ export function createOrGetTodayEntry(): DayEntry {
     "Friday",
     "Saturday",
   ];
-  const dayOfWeek = dayNames[new Date().getDay()];
-  const weekOfMonth = Math.ceil(
-    (new Date().getDate() - 1) / 7 + 1
-  ) as 1 | 2 | 3 | 4 | 5 | 6;
+  const d = new Date(date + "T12:00:00");
+  const dayOfWeek = dayNames[d.getDay()];
+  const weekOfMonth = Math.ceil((d.getDate() - 1) / 7 + 1) as 1 | 2 | 3 | 4 | 5 | 6;
   const clampedWeek = Math.min(6, Math.max(1, weekOfMonth)) as 1 | 2 | 3 | 4 | 5 | 6;
 
   const entry: DayEntry = {
     id: generateId(),
-    date: today,
+    date,
     day: dayOfWeek,
     week: clampedWeek,
     participationPlan: null,
@@ -154,16 +168,26 @@ export function createOrGetTodayEntry(): DayEntry {
     weekendWakeupTime: null,
     weekendLunchTime: null,
     weekendDinnerTime: null,
+    bedtimeTime: null,
     meals: [],
     schedule: defaultSchedule,
     scheduleChoices: {},
     freeTimeActivities: [],
     scheduleBlocks: [],
   };
-  const entries = loadEntries();
-  entries.push(entry);
-  saveEntries(entries);
+  const allEntries = loadEntries();
+  const duplicateCheck = allEntries.find((e) => e.date === date);
+  if (duplicateCheck) {
+    return duplicateCheck;
+  }
+  allEntries.push(entry);
+  saveEntries(allEntries);
   return entry;
+}
+
+export function createOrGetTodayEntry(): DayEntry {
+  const today = new Date().toISOString().slice(0, 10);
+  return createOrGetEntryForDate({ date: today });
 }
 
 export function updateEntry({

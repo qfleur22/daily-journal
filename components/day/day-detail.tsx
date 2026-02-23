@@ -131,6 +131,7 @@ export function DayDetail({ entryId, mode }: DayDetailProps) {
             weekendWakeupTime={entry.weekendWakeupTime}
             weekendLunchTime={entry.weekendLunchTime}
             weekendDinnerTime={entry.weekendDinnerTime}
+            bedtimeTime={entry.bedtimeTime}
             onWeekendTimesChange={(updates) => handleUpdate(updates)}
             morningRoutine={entry.morningRoutine}
             bedtimeRoutine={entry.bedtimeRoutine}

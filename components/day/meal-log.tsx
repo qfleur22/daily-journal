@@ -40,6 +40,8 @@ export function MealLog({
       whatIAte: meal.whatIAte,
       whatIDrank: meal.whatIDrank ?? "",
       caffeinated: meal.caffeinated ?? false,
+      mealTime: meal.mealTime ?? null,
+      mealTimeEnd: meal.mealTimeEnd ?? null,
     });
     setSaveFeedback(true);
     setTimeout(() => {
@@ -82,28 +84,36 @@ export function MealLog({
               <button
                 type="button"
                 onClick={() => onUpdate({ mealTime: "12:00", mealTimeEnd: "13:00" })}
-                className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium"
+                className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
               >
-                Planned (Noon)
+                Noon (planned)
               </button>
             )}
             {meal.mealType === "dinner" && (
               <button
                 type="button"
                 onClick={() => {
-                  const start = "18:00";
-                  onUpdate({ mealTime: start, mealTimeEnd: "19:00" });
+                  onUpdate({ mealTime: "17:30", mealTimeEnd: "18:30" });
                 }}
-                className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium"
+                className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
               >
-                6pm (1 hr)
+                5:30–6:30 (planned)
+              </button>
+            )}
+            {meal.mealType === "snack" && (
+              <button
+                type="button"
+                onClick={() => onUpdate({ mealTime: "16:00" })}
+                className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+              >
+                4pm (planned)
               </button>
             )}
             <input
               type="time"
               value={meal.mealTime ?? ""}
               onChange={(e) => onUpdate({ mealTime: e.target.value || null })}
-              className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-white/80 text-sm"
+              className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
             />
             <button
               type="button"
@@ -127,7 +137,7 @@ export function MealLog({
                   onUpdate({ mealTime: start });
                 }
               }}
-              className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium"
+              className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
             >
               Now
             </button>
@@ -142,7 +152,7 @@ export function MealLog({
                   onChange={(e) =>
                     onUpdate({ mealTimeEnd: e.target.value || null })
                   }
-                  className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-white/80 text-sm"
+                  className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
                 />
               </div>
             )}

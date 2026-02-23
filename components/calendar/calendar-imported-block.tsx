@@ -43,49 +43,68 @@ export function CalendarImportedBlock({
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             {isEditingTime ? (
-              <div className="flex flex-wrap items-center gap-2">
-                <input
-                  type="time"
-                  value={timeStart}
-                  onChange={(e) => setTimeStart(e.target.value)}
-                  className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-white/80 text-sm"
-                />
-                <span className="text-slate-500">–</span>
-                <input
-                  type="time"
-                  value={timeEnd}
-                  onChange={(e) => setTimeEnd(e.target.value)}
-                  className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-white/80 text-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setTimeStart(formatTimeNow())}
-                  className={`px-2 py-1 text-sm shrink-0 ${buttonClass}`}
-                >
-                  Now
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const [h, m] = timeStart.split(":").map(Number);
-                    const endMins = (h * 60 + (m ?? 0) + 60) % (24 * 60);
-                    const eh = Math.floor(endMins / 60);
-                    const em = endMins % 60;
-                    setTimeEnd(
-                      `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`
-                    );
-                  }}
-                  className={`px-2 py-1 text-sm shrink-0 ${buttonClass}`}
-                >
-                  Planned (1hr)
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveTime}
-                  className="px-2 py-1 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium"
-                >
-                  Done
-                </button>
+              <div className="flex flex-col gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setTimeStart("16:00")}
+                    className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                  >
+                    4pm (planned)
+                  </button>
+                  <input
+                    type="time"
+                    value={timeStart}
+                    onChange={(e) => setTimeStart(e.target.value)}
+                    className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setTimeStart(formatTimeNow())}
+                    className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                  >
+                    Now
+                  </button>
+                  <span className="text-slate-500">Start</span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const [h, m] = timeStart.split(":").map(Number);
+                      const endMins = (h * 60 + (m ?? 0) + 60) % (24 * 60);
+                      const eh = Math.floor(endMins / 60);
+                      const em = endMins % 60;
+                      setTimeEnd(
+                        `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`
+                      );
+                    }}
+                    className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                  >
+                    1hr (planned)
+                  </button>
+                  <input
+                    type="time"
+                    value={timeEnd}
+                    onChange={(e) => setTimeEnd(e.target.value)}
+                    className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setTimeEnd(formatTimeNow())}
+                    className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                  >
+                    Now
+                  </button>
+                  <span className="text-slate-500">End</span>
+                    <button
+                      type="button"
+                      onClick={handleSaveTime}
+                      className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                    >
+                      Done
+                    </button>
+                </div>
               </div>
             ) : (
               <>

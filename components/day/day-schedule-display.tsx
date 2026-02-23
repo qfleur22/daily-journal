@@ -90,7 +90,7 @@ function parseMealTimeToMinutes(mealTime: string | null): number {
 }
 
 const FREE_TIME_START_MINUTES = 16 * 60;
-const FREE_TIME_END_MINUTES = 21 * 60;
+const FREE_TIME_END_MINUTES = 23 * 60 + 59;
 
 function blockOverlapsFreeTime(block: ScheduleTimeBlock): boolean {
   const start = parseMealTimeToMinutes(block.timeStart);
@@ -102,6 +102,38 @@ function formatMinutesToTime(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+function parseScheduleItemTimeToRange(item: ScheduleItem): {
+  start: string;
+  end: string;
+} {
+  const timeStr = item.time;
+  const periodMatch = timeStr.match(/(AM|PM)/i);
+  const period = periodMatch?.[0] ?? "AM";
+  if (timeStr.includes("–") || timeStr.includes("-")) {
+    const parts = timeStr.split(/[–-]/).map((p) => p.trim());
+    const startPart = parts[0]?.includes("AM") || parts[0]?.includes("PM")
+      ? parts[0]
+      : (parts[0] ?? "") + " " + period;
+    const endPart = parts[1]?.includes("AM") || parts[1]?.includes("PM")
+      ? parts[1]
+      : (parts[1] ?? "") + " " + period;
+    return {
+      start: formatMinutesToTime(parseScheduleTimeToMinutes(startPart)),
+      end: formatMinutesToTime(parseScheduleTimeToMinutes(endPart)),
+    };
+  }
+  const startMins = parseScheduleTimeToMinutes(timeStr);
+  return {
+    start: formatMinutesToTime(startMins),
+    end: formatMinutesToTime(startMins + 60),
+  };
+}
+
+function isSeeUnitScheduleItem(item: ScheduleItem): boolean {
+  const names = item.options.map((o) => o.name).join(" ");
+  return /see unit schedule/i.test(names);
 }
 
 function getCompletedRoutineLabels({
@@ -211,14 +243,15 @@ function getMealEndTime(meal: Meal): string {
 
 function getFreeTimeSegments(
   blocksInFreeTime: ScheduleTimeBlock[],
-  dinnerAndSnackMeals: Meal[]
+  dinnerAndSnackMeals: Meal[],
+  freeTimeEndMinutes: number = FREE_TIME_END_MINUTES
 ): { start: number; end: number }[] {
   const blockIntervals = blocksInFreeTime.map((b) => ({
     start: Math.max(
       parseMealTimeToMinutes(b.timeStart),
       FREE_TIME_START_MINUTES
     ),
-    end: Math.min(parseMealTimeToMinutes(b.timeEnd), FREE_TIME_END_MINUTES),
+    end: Math.min(parseMealTimeToMinutes(b.timeEnd), freeTimeEndMinutes),
   }));
   const mealIntervals = dinnerAndSnackMeals
     .filter((m) => m.mealTime)
@@ -227,7 +260,7 @@ function getFreeTimeSegments(
       const end = parseMealTimeToMinutes(getMealEndTime(m));
       return {
         start: Math.max(start, FREE_TIME_START_MINUTES),
-        end: Math.min(end, FREE_TIME_END_MINUTES),
+        end: Math.min(end, freeTimeEndMinutes),
       };
     })
     .filter((o) => o.end > o.start);
@@ -253,8 +286,8 @@ function getFreeTimeSegments(
     }
     pos = Math.max(pos, o.end);
   }
-  if (pos < FREE_TIME_END_MINUTES) {
-    segments.push({ start: pos, end: FREE_TIME_END_MINUTES });
+  if (pos < freeTimeEndMinutes) {
+    segments.push({ start: pos, end: freeTimeEndMinutes });
   }
   return segments;
 }
@@ -305,17 +338,24 @@ function ScheduleBlockEditForm({
       <div className="flex gap-3 items-center">
         <div className="flex-1">
           <label className="block text-xs text-slate-500 mb-0.5">Start</label>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTimeStart("16:00")}
+              className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+            >
+              4pm (planned)
+            </button>
             <input
               type="time"
               value={timeStart}
               onChange={(e) => setTimeStart(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80"
+              className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
             />
             <button
               type="button"
               onClick={() => setTimeStart(formatTimeNow())}
-              className="px-2 py-2 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium shrink-0"
+              className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
             >
               Now
             </button>
@@ -323,17 +363,24 @@ function ScheduleBlockEditForm({
         </div>
         <div className="flex-1">
           <label className="block text-xs text-slate-500 mb-0.5">End</label>
-          <div className="flex gap-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTimeEnd("22:00")}
+              className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+            >
+              10pm (planned)
+            </button>
             <input
               type="time"
               value={timeEnd}
               onChange={(e) => setTimeEnd(e.target.value)}
-              className="flex-1 px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80"
+              className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
             />
             <button
               type="button"
               onClick={() => setTimeEnd(formatTimeNow())}
-              className="px-2 py-2 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium shrink-0"
+              className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
             >
               Now
             </button>
@@ -404,17 +451,13 @@ interface DayScheduleDisplayProps {
     weekendWakeupTime?: string | null;
     weekendLunchTime?: string | null;
     weekendDinnerTime?: string | null;
+    bedtimeTime?: string | null;
   }) => void;
+  bedtimeTime?: string | null;
   morningRoutine?: RoutineProgress | null;
   bedtimeRoutine?: RoutineProgress | null;
   onMorningRoutineChange?: (routine: RoutineProgress) => void;
   onBedtimeRoutineChange?: (routine: RoutineProgress) => void;
-}
-
-function isWeekend(date: string): boolean {
-  const d = new Date(date + "T12:00:00");
-  const day = d.getDay();
-  return day === 0 || day === 6;
 }
 
 export function DayScheduleDisplay({
@@ -427,6 +470,7 @@ export function DayScheduleDisplay({
   weekendWakeupTime,
   weekendLunchTime,
   weekendDinnerTime,
+  bedtimeTime,
   onWeekendTimesChange,
   morningRoutine,
   bedtimeRoutine,
@@ -435,6 +479,8 @@ export function DayScheduleDisplay({
 }: DayScheduleDisplayProps) {
   const [logs, setLogs] = useState<Record<string, GroupLog>>({});
   const [expandedMealId, setExpandedMealId] = useState<string | null>(null);
+  const [expandedMealAddedFromBlock, setExpandedMealAddedFromBlock] =
+    useState<MealType | null>(null);
   const [cupsOfTea, setCupsOfTea] = useState(0);
   const [editingNotesForItemId, setEditingNotesForItemId] = useState<
     string | null
@@ -448,6 +494,11 @@ export function DayScheduleDisplay({
     string | null
   >(null);
   const [showFreeTimeAddActivity, setShowFreeTimeAddActivity] = useState(false);
+  const [seeUnitScheduleAddActivityItemId, setSeeUnitScheduleAddActivityItemId] =
+    useState<string | null>(null);
+  const [freeTimeNoteSavedFeedback, setFreeTimeNoteSavedFeedback] =
+    useState(false);
+  const [editingFreeTimeNote, setEditingFreeTimeNote] = useState(true);
   const [freeTimeActivityTitle, setFreeTimeActivityTitle] = useState("");
   const [freeTimeActivityNotes, setFreeTimeActivityNotes] = useState("");
   const [freeTimeActivityStart, setFreeTimeActivityStart] = useState(
@@ -469,8 +520,11 @@ export function DayScheduleDisplay({
 
   useEffect(() => {
     const dayLog = getDayLog({ date });
-    setLogs(dayLog?.logs ?? {});
+    const newLogs = dayLog?.logs ?? {};
+    setLogs(newLogs);
     setCupsOfTea(dayLog?.cupsOfTea ?? 0);
+    const hasNote = (newLogs["free-time"]?.notes ?? "").trim().length > 0;
+    setEditingFreeTimeNote(!hasNote);
   }, [date]);
 
   const handleLogChange = (itemId: string, update: Partial<GroupLog>) => {
@@ -500,7 +554,8 @@ export function DayScheduleDisplay({
 
   const handleAddMealInBlock = (
     mealType: MealType,
-    initialMealTime?: string | null
+    initialMealTime?: string | null,
+    initialMealTimeEnd?: string | null
   ) => {
     if (!onMealsChange) {
       return;
@@ -509,14 +564,17 @@ export function DayScheduleDisplay({
       expandedMeal?.mealType === mealType && expandedMealId !== null;
     if (isExpandedForType) {
       setExpandedMealId(null);
+      setExpandedMealAddedFromBlock(null);
       return;
     }
     const newMeal = createMeal({
       mealType,
       mealTime: initialMealTime ?? null,
+      mealTimeEnd: initialMealTimeEnd ?? null,
     });
     onMealsChange([...(meals ?? []), newMeal]);
     setExpandedMealId(newMeal.id);
+    setExpandedMealAddedFromBlock(mealType);
   };
 
   const updateMeal = (id: string, updates: Partial<Meal>) => {
@@ -533,6 +591,7 @@ export function DayScheduleDisplay({
     }
     if (expandedMealId === id) {
       setExpandedMealId(null);
+      setExpandedMealAddedFromBlock(null);
     }
   };
 
@@ -566,8 +625,6 @@ export function DayScheduleDisplay({
   };
 
   const expandedMeal = (meals ?? []).find((m) => m.id === expandedMealId);
-  const isWeekendDay = isWeekend(date);
-
   const buttonClass =
     "rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 font-medium transition-colors";
 
@@ -619,15 +676,22 @@ export function DayScheduleDisplay({
     attended: false,
     notes: "",
   };
+  const wakeupLog = logs["wakeup"] ?? {
+    itemId: "wakeup",
+    attended: false,
+    notes: "",
+  };
   const takeMedsEveningLog = logs["take-meds-evening"] ?? {
     itemId: "take-meds-evening",
     attended: false,
     notes: "",
   };
 
-  const takeMedsShowEditor = !takeMedsLog.attended || editingTakeMeds;
+  const takeMedsShowEditor =
+    (!takeMedsLog.attended && !takeMedsLog.missed) || editingTakeMeds;
   const takeMedsEveningShowEditor =
-    !takeMedsEveningLog.attended || editingTakeMedsEvening;
+    (!takeMedsEveningLog.attended && !takeMedsEveningLog.missed) ||
+    editingTakeMedsEvening;
 
   const renderTakeMedsBlock = ({
     logKey,
@@ -636,14 +700,16 @@ export function DayScheduleDisplay({
     plannedLabel,
     showEditor,
     onMarkTaken,
+    onMarkMissed,
     onEdit,
   }: {
     logKey: string;
-    log: { attended: boolean; recordedTime?: string };
+    log: { attended: boolean; recordedTime?: string; missed?: boolean };
     defaultTime: string;
     plannedLabel: string;
     showEditor: boolean;
     onMarkTaken: () => void;
+    onMarkMissed: () => void;
     onEdit: () => void;
   }) => (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -653,7 +719,11 @@ export function DayScheduleDisplay({
             ? formatMealTimeForDisplay(log.recordedTime)
             : formatMealTimeForDisplay(defaultTime)}
         </p>
-        <p className="font-extrabold text-slate-800">Take meds</p>
+        <p
+          className={`font-extrabold text-slate-800 ${log.missed ? "line-through" : ""}`}
+        >
+          Take meds
+        </p>
       </div>
       <div className="flex flex-col gap-3 shrink-0">
         {showEditor ? (
@@ -671,6 +741,17 @@ export function DayScheduleDisplay({
               >
                 {plannedLabel}
               </button>
+              <input
+                type="time"
+                value={log.recordedTime ?? ""}
+                onChange={(e) =>
+                  handleLogChange(logKey, {
+                    ...log,
+                    recordedTime: e.target.value || undefined,
+                  })
+                }
+                className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
+              />
               <button
                 type="button"
                 onClick={() => {
@@ -685,25 +766,23 @@ export function DayScheduleDisplay({
               >
                 Now
               </button>
-              <input
-                type="time"
-                value={log.recordedTime ?? ""}
-                onChange={(e) =>
-                  handleLogChange(logKey, {
-                    ...log,
-                    recordedTime: e.target.value || undefined,
-                  })
-                }
-                className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
-              />
             </div>
-            <button
-              type="button"
-              onClick={onMarkTaken}
-              className="px-3 py-2 text-sm rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 font-medium w-fit"
-            >
-              Mark taken
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={onMarkMissed}
+                className="px-3 py-2 text-sm rounded-lg border-2 border-red-300/60 bg-red-100/80 hover:bg-red-200/80 text-red-800 font-medium w-fit"
+              >
+                Mark missed
+              </button>
+              <button
+                type="button"
+                onClick={onMarkTaken}
+                className="px-3 py-2 text-sm rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 font-medium w-fit"
+              >
+                Mark taken
+              </button>
+            </div>
           </>
         ) : (
           <button
@@ -734,6 +813,13 @@ export function DayScheduleDisplay({
         });
         setEditingTakeMeds(false);
       },
+      onMarkMissed: () => {
+        handleLogChange("take-meds", {
+          ...takeMedsLog,
+          missed: true,
+        });
+        setEditingTakeMeds(false);
+      },
       onEdit: () => setEditingTakeMeds(true),
     });
 
@@ -753,83 +839,31 @@ export function DayScheduleDisplay({
         });
         setEditingTakeMedsEvening(false);
       },
+      onMarkMissed: () => {
+        handleLogChange("take-meds-evening", {
+          ...takeMedsEveningLog,
+          missed: true,
+        });
+        setEditingTakeMedsEvening(false);
+      },
       onEdit: () => setEditingTakeMedsEvening(true),
     });
 
-  const handleNowClick = (field: "weekendWakeupTime" | "weekendLunchTime" | "weekendDinnerTime") => {
-    const now = new Date();
-    const v = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    onWeekendTimesChange?.({ [field]: v });
+  const closeAddActivityForm = () => {
+    setShowFreeTimeAddActivity(false);
+    setSeeUnitScheduleAddActivityItemId(null);
   };
 
-  const renderTimeRow = (
-    field: "weekendWakeupTime" | "weekendLunchTime" | "weekendDinnerTime",
-    value: string
-  ) => (
-    <div className="flex items-center gap-2">
-      <input
-        type="time"
-        value={value}
-        onChange={(e) =>
-          onWeekendTimesChange?.({ [field]: e.target.value || null })
-        }
-        className="px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80"
-      />
-      <button
-        type="button"
-        onClick={() => handleNowClick(field)}
-        className={`px-3 py-2 text-sm ${buttonClass}`}
-      >
-        Now
-      </button>
-    </div>
-  );
-
-  const renderFreeTimeBlockContent = () => (
-    <>
-      <div className="mt-3">
-        <label className="block text-sm font-medium text-slate-700 mb-1">
-          What did you spend your time doing?
-        </label>
-        <textarea
-          value={freeTimeLog.notes}
-          onChange={(e) =>
-            handleLogChange("free-time", {
-              ...freeTimeLog,
-              notes: e.target.value,
-            })
-          }
-          placeholder="e.g. rest, TV, walk, reading..."
-          className="w-full px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80 min-h-[60px]"
-          rows={2}
-        />
-      </div>
-      {onScheduleBlocksChange && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowFreeTimeAddActivity((p) => !p)}
-            className={`px-3 py-2 text-sm ${buttonClass}`}
-          >
-            {showFreeTimeAddActivity ? "Close activity" : "+ Add activity"}
-          </button>
-          <Link
-            href="/self-care"
-            className="text-sm text-slate-600 hover:text-thistle hover:underline"
-          >
-            Need activities?
-          </Link>
-        </div>
-      )}
-      {showFreeTimeAddActivity && onScheduleBlocksChange && (
-        <div className="mt-3 rounded-lg border-2 border-thistle/40 p-4 bg-white/60 space-y-3 relative">
-          <button
-            type="button"
-            onClick={() => setShowFreeTimeAddActivity(false)}
-            className="absolute top-3 right-3 text-sm text-slate-500 hover:text-red-600"
-          >
-            Remove
-          </button>
+  const renderAddActivityForm = (onClose: () => void) =>
+    onScheduleBlocksChange ? (
+      <div className="mt-3 rounded-lg border-2 border-thistle/40 p-4 bg-white/60 space-y-3 relative">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3 right-3 text-sm text-slate-500 hover:text-red-600"
+        >
+          Remove
+        </button>
           <input
             type="text"
             value={freeTimeActivityTitle}
@@ -847,17 +881,24 @@ export function DayScheduleDisplay({
           <div className="flex gap-3 items-center">
             <div className="flex-1">
               <label className="block text-xs text-slate-500 mb-0.5">Start</label>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFreeTimeActivityStart("16:00")}
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                >
+                  4pm (planned)
+                </button>
                 <input
                   type="time"
                   value={freeTimeActivityStart}
                   onChange={(e) => setFreeTimeActivityStart(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80"
+                  className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setFreeTimeActivityStart(formatTimeNow())}
-                  className={`px-2 py-2 text-sm shrink-0 ${buttonClass}`}
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
                 >
                   Now
                 </button>
@@ -865,17 +906,24 @@ export function DayScheduleDisplay({
             </div>
             <div className="flex-1">
               <label className="block text-xs text-slate-500 mb-0.5">End</label>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFreeTimeActivityEnd("22:00")}
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                >
+                  10pm (planned)
+                </button>
                 <input
                   type="time"
                   value={freeTimeActivityEnd}
                   onChange={(e) => setFreeTimeActivityEnd(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80"
+                  className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setFreeTimeActivityEnd(formatTimeNow())}
-                  className={`px-2 py-2 text-sm shrink-0 ${buttonClass}`}
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
                 >
                   Now
                 </button>
@@ -904,7 +952,7 @@ export function DayScheduleDisplay({
                 setFreeTimeActivityNotes("");
                 setFreeTimeActivityStart(formatTimeNow());
                 setFreeTimeActivityEnd(formatTimeNow());
-                setShowFreeTimeAddActivity(false);
+                closeAddActivityForm();
               }}
               disabled={!freeTimeActivityTitle.trim()}
               className={`px-4 py-2 text-sm ${buttonClass}`}
@@ -913,14 +961,117 @@ export function DayScheduleDisplay({
             </button>
             <button
               type="button"
-              onClick={() => setShowFreeTimeAddActivity(false)}
+              onClick={onClose}
               className="px-4 py-2 text-sm rounded-lg border-2 border-thistle/50 bg-white/80 hover:bg-slate-100 text-slate-800"
             >
               Cancel
             </button>
           </div>
         </div>
+      ) : null;
+
+  const handleSaveFreeTimeNote = () => {
+    handleLogChange("free-time", {
+      ...freeTimeLog,
+      notes: freeTimeLog.notes,
+    });
+    setFreeTimeNoteSavedFeedback(true);
+    setTimeout(() => setFreeTimeNoteSavedFeedback(false), 500);
+    setEditingFreeTimeNote(false);
+  };
+
+  const renderFreeTimeBlockContent = () => (
+    <>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex-1 min-w-0">
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            What did you spend your time doing?
+          </label>
+          {freeTimeShowEditor && editingFreeTimeNote ? (
+            <textarea
+              value={freeTimeLog.notes}
+              onChange={(e) =>
+                handleLogChange("free-time", {
+                  ...freeTimeLog,
+                  notes: e.target.value,
+                })
+              }
+              placeholder="e.g. rest, TV, walk, reading..."
+              className="w-full px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80 min-h-[60px]"
+              rows={2}
+            />
+          ) : (
+            <p className="text-sm text-slate-700 whitespace-pre-wrap min-h-[2.5rem] px-3 py-2 rounded-lg bg-white/60">
+              {freeTimeLog.notes || (
+                <span className="text-slate-500 italic">No note yet</span>
+              )}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {!freeTimeLog.missed && (
+            <button
+              type="button"
+              onClick={() =>
+                handleLogChange("free-time", {
+                  ...freeTimeLog,
+                  missed: true,
+                })
+              }
+              className="px-3 py-2 text-sm rounded-lg border-2 border-red-300/60 bg-red-100/80 hover:bg-red-200/80 text-red-800 font-medium"
+            >
+              Mark missed
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={
+              editingFreeTimeNote
+                ? handleSaveFreeTimeNote
+                : () => setEditingFreeTimeNote(true)
+            }
+            className={`px-3 py-2 text-sm ${buttonClass}`}
+          >
+            {editingFreeTimeNote
+              ? freeTimeNoteSavedFeedback
+                ? "Saved"
+                : "Save note"
+              : "Edit"}
+          </button>
+        </div>
+      </div>
+      {onScheduleBlocksChange && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setSeeUnitScheduleAddActivityItemId(null);
+              setShowFreeTimeAddActivity((p) => !p);
+            }}
+            className={`px-3 py-2 text-sm ${buttonClass}`}
+          >
+            {showFreeTimeAddActivity ? "Close activity" : "+ Add activity"}
+          </button>
+          <Link
+            href="/self-care"
+            className="text-sm text-slate-600 hover:text-thistle hover:underline"
+          >
+            Need activities?
+          </Link>
+        </div>
       )}
+      {canAddMeals && (
+        <div className="mt-3 pt-2 border-t border-thistle/40">
+          {renderBlockAddMeal(
+            "snack",
+            "Snack",
+            undefined,
+            "16:00",
+            "rounded-lg border border-thistle/40 p-3 bg-white/60"
+          )}
+        </div>
+      )}
+      {showFreeTimeAddActivity && renderAddActivityForm(closeAddActivityForm)}
     </>
   );
 
@@ -960,10 +1111,13 @@ export function DayScheduleDisplay({
     label: string,
     extraButtons?: React.ReactNode,
     initialMealTime?: string | null,
-    summaryBlockClassName?: string
+    summaryBlockClassName?: string,
+    initialMealTimeEnd?: string | null
   ) => {
     const isExpanded =
-      expandedMeal?.mealType === mealType && expandedMealId !== null;
+      expandedMealId !== null &&
+      expandedMeal &&
+      expandedMealAddedFromBlock === mealType;
     const mealsOfType = (meals ?? []).filter((m) => m.mealType === mealType);
     const hideAddWhenMealExists =
       (mealType === "breakfast" || mealType === "lunch") &&
@@ -976,7 +1130,7 @@ export function DayScheduleDisplay({
             <button
               type="button"
               onClick={() =>
-                handleAddMealInBlock(mealType, initialMealTime)
+                handleAddMealInBlock(mealType, initialMealTime, initialMealTimeEnd)
               }
               className={`px-3 py-2 text-sm ${buttonClass}`}
             >
@@ -991,7 +1145,10 @@ export function DayScheduleDisplay({
               meal={expandedMeal}
               onUpdate={(updates) => updateMeal(expandedMeal.id, updates)}
               onRemove={() => removeMeal(expandedMeal.id)}
-              onSaveSuccess={() => setExpandedMealId(null)}
+              onSaveSuccess={() => {
+                setExpandedMealId(null);
+                setExpandedMealAddedFromBlock(null);
+              }}
             />
           </div>
         )}
@@ -1000,130 +1157,15 @@ export function DayScheduleDisplay({
           summaryBlockClassName ??
             "rounded-lg border border-thistle/40 p-3 bg-white/60",
           {
-            onEdit: (meal) => setExpandedMealId(meal.id),
+            onEdit: (meal) => {
+              setExpandedMealId(meal.id);
+              setExpandedMealAddedFromBlock(meal.mealType ?? mealType);
+            },
           }
         )}
       </div>
     );
   };
-
-  if (isWeekendDay) {
-    return (
-      <section className="rounded-xl border-2 border-thistle/60 bg-white/80 p-6">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-          <div>
-            <h2 className="text-xl font-semibold">Daily schedule</h2>
-            <p className="text-sm text-slate-600">Weekend</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-slate-600">Tea today:</span>
-            {renderTeaCounter()}
-          </div>
-        </div>
-        <ul className="space-y-4">
-          <li className="rounded-lg p-4 bg-icy-blue/40 border border-icy-blue/60">
-            <p className="font-extrabold text-slate-800 mb-3">Morning</p>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Wakeup time
-            </label>
-            {renderTimeRow(
-              "weekendWakeupTime",
-              weekendWakeupTime ?? ""
-            )}
-            <div className="mt-3 flex flex-wrap gap-3">
-              <Link
-                href="/routine/morning"
-                className={`inline-flex px-4 py-2 text-sm ${buttonClass}`}
-              >
-                Morning routine →
-              </Link>
-              {renderDrinkTeaButton()}
-            </div>
-            {renderBlockAddMeal(
-              "breakfast",
-              "Breakfast",
-              undefined,
-              weekendWakeupTime ?? "08:00",
-              "rounded-lg border border-sky-blue/50 p-3 bg-sky-blue/20"
-            )}
-            <RoutineColumns
-              routine={morningRoutine}
-              itemsByTier={MORNING_ROUTINE_ITEMS}
-              onRoutineChange={onMorningRoutineChange}
-            />
-          </li>
-          <li className="rounded-lg p-4 bg-pastel-petal/30 border border-pastel-petal/50">
-            <p className="font-extrabold text-slate-800 mb-3">Lunch</p>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
-              Meal time
-            </label>
-            {renderTimeRow("weekendLunchTime", weekendLunchTime ?? "")}
-            {lunchMeals.length === 0 && canAddMeals && (
-              <button
-                type="button"
-                onClick={() =>
-                  handleAddMealInBlock("lunch", weekendLunchTime)
-                }
-                className={`px-3 py-2 text-sm ${buttonClass}`}
-              >
-                + Add meal (Lunch)
-              </button>
-            )}
-            {expandedMeal?.mealType === "lunch" && expandedMeal && (
-              <div className="pt-2 border-t border-thistle/40">
-                <MealLog
-                  meal={expandedMeal}
-                  onUpdate={(u) => updateMeal(expandedMeal.id, u)}
-                  onRemove={() => removeMeal(expandedMeal.id)}
-                  onSaveSuccess={() => setExpandedMealId(null)}
-                />
-              </div>
-            )}
-          </li>
-          <li className="rounded-lg p-4 bg-sky-blue/30 border border-sky-blue/50">
-            <p className="font-extrabold text-slate-800 mb-3">Dinner</p>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Dinner time
-                </label>
-                {renderTimeRow("weekendDinnerTime", weekendDinnerTime ?? "")}
-              </div>
-              <div className="flex flex-wrap gap-3">
-                {canAddMeals && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleAddMealInBlock("dinner", weekendDinnerTime)
-                    }
-                    className={`px-3 py-2 text-sm ${buttonClass}`}
-                  >
-                    + Add meal (Dinner)
-                  </button>
-                )}
-                <Link
-                  href="/routine/bedtime"
-                  className={`inline-flex px-4 py-2 text-sm ${buttonClass}`}
-                >
-                  Routine
-                </Link>
-              </div>
-            </div>
-            {expandedMeal?.mealType === "dinner" && expandedMeal && (
-              <div className="mt-3 pt-2 border-t border-thistle/40">
-                <MealLog
-                  meal={expandedMeal}
-                  onUpdate={(u) => updateMeal(expandedMeal.id, u)}
-                  onRemove={() => removeMeal(expandedMeal.id)}
-                  onSaveSuccess={() => setExpandedMealId(null)}
-                />
-              </div>
-            )}
-          </li>
-        </ul>
-      </section>
-    );
-  }
 
   if (baseItems.length === 0 && !showExtended) {
     return (
@@ -1179,6 +1221,7 @@ export function DayScheduleDisplay({
     attended: false,
     notes: "",
   };
+  const freeTimeShowEditor = !freeTimeLog.missed || editingFreeTimeNote;
 
   const departItem = baseItems.find((i) => i.options[0]?.name === "Depart");
   const departLog = departItem ? logs[departItem.id] : null;
@@ -1192,13 +1235,17 @@ export function DayScheduleDisplay({
       (m.mealType === "dinner" || m.mealType === "snack") && m.mealTime
   );
 
+  const effectiveFreeTimeEndMinutes = bedtimeTime
+    ? parseMealTimeToMinutes(bedtimeTime)
+    : FREE_TIME_END_MINUTES;
   const blocksInFreeTime = (scheduleBlocks ?? []).filter(blockOverlapsFreeTime);
   const blocksOutsideFreeTime = (scheduleBlocks ?? []).filter(
     (b) => !blockOverlapsFreeTime(b)
   );
   const freeTimeSegments = getFreeTimeSegments(
     blocksInFreeTime,
-    dinnerAndSnackMeals
+    dinnerAndSnackMeals,
+    effectiveFreeTimeEndMinutes
   );
 
   const timelineEntries: Array<
@@ -1219,11 +1266,22 @@ export function DayScheduleDisplay({
     {
       type: "takeMeds" as const,
       sortOrder: parseMealTimeToMinutes(
-        takeMedsLog.recordedTime ?? "07:00"
+        takeMedsLog.attended
+          ? (takeMedsLog.recordedTime ?? "07:00")
+          : "07:00"
       ),
     },
     ...(showMorningBlocks
-      ? [{ type: "wakeup" as const, sortOrder: 8 * 60 }]
+      ? [
+          {
+            type: "wakeup" as const,
+            sortOrder: parseMealTimeToMinutes(
+              wakeupLog.attended
+                ? (wakeupLog.recordedTime ?? "08:00")
+                : "08:00"
+            ),
+          },
+        ]
       : []),
     ...baseItems.map((item) => {
       const isDepartItem = item.options[0]?.name === "Depart";
@@ -1238,11 +1296,13 @@ export function DayScheduleDisplay({
         sortOrder,
       };
     }),
-    ...dinnerAndSnackMeals.map((meal) => ({
-      type: "meal" as const,
-      meal,
-      sortOrder: parseMealTimeToMinutes(meal.mealTime),
-    })),
+    ...dinnerAndSnackMeals
+      .filter((m) => m.mealType !== "dinner")
+      .map((meal) => ({
+        type: "meal" as const,
+        meal,
+        sortOrder: parseMealTimeToMinutes(meal.mealTime),
+      })),
     ...blocksOutsideFreeTime.map((block) => ({
       type: "scheduleBlock" as const,
       block,
@@ -1264,7 +1324,9 @@ export function DayScheduleDisplay({
     {
       type: "takeMedsEvening" as const,
       sortOrder: parseMealTimeToMinutes(
-        takeMedsEveningLog.recordedTime ?? "20:30"
+        takeMedsEveningLog.attended
+          ? (takeMedsEveningLog.recordedTime ?? "20:30")
+          : "20:30"
       ),
     },
   ];
@@ -1272,7 +1334,14 @@ export function DayScheduleDisplay({
 
   const blockExtendsToFreeTimeEnd = (block: ScheduleTimeBlock): boolean => {
     const endMins = parseMealTimeToMinutes(block.timeEnd);
-    return endMins >= FREE_TIME_END_MINUTES;
+    return endMins >= effectiveFreeTimeEndMinutes;
+  };
+
+  const getBlockDisplayEnd = (block: ScheduleTimeBlock): string => {
+    if (blockExtendsToFreeTimeEnd(block)) {
+      return formatMinutesToTime(effectiveFreeTimeEndMinutes);
+    }
+    return block.timeEnd;
   };
 
   const timelineBeforeFreeTime = timelineEntries.filter(
@@ -1332,22 +1401,78 @@ export function DayScheduleDisplay({
             );
           }
           if (entry.type === "wakeup") {
-            const morningLabels =
-              morningRoutine?.completedItemIds?.length
-                ? getCompletedRoutineLabels({
-                    completedItemIds: morningRoutine.completedItemIds,
-                    itemsByTier: MORNING_ROUTINE_ITEMS,
-                  })
-                : [];
             return (
               <li
                 key="wakeup"
                 className="rounded-lg p-4 bg-icy-blue/40 border border-icy-blue/60"
               >
-                <p className="font-mono text-sm font-extrabold text-slate-600">
-                  8:00 AM
-                </p>
-                <p className="font-extrabold text-slate-800">Wakeup</p>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex-1">
+                    <p className="font-mono text-sm font-extrabold text-slate-600">
+                      {wakeupLog.recordedTime
+                        ? formatMealTimeForDisplay(wakeupLog.recordedTime)
+                        : formatMealTimeForDisplay("08:00")}
+                    </p>
+                    <p className="font-extrabold text-slate-800">Wakeup</p>
+                  </div>
+                  <div className="flex flex-col gap-2 shrink-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleLogChange("wakeup", {
+                            ...wakeupLog,
+                            recordedTime: "08:00",
+                          })
+                        }
+                        className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                      >
+                        8am (planned)
+                      </button>
+                      <input
+                        type="time"
+                        value={wakeupLog.recordedTime ?? ""}
+                        onChange={(e) =>
+                          handleLogChange("wakeup", {
+                            ...wakeupLog,
+                            recordedTime: e.target.value || undefined,
+                          })
+                        }
+                        className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const now = new Date();
+                          const v = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+                          handleLogChange("wakeup", {
+                            ...wakeupLog,
+                            recordedTime: v,
+                          });
+                        }}
+                        className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                      >
+                        Now
+                      </button>
+                    </div>
+                    {!wakeupLog.attended && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const time = wakeupLog.recordedTime ?? "08:00";
+                          handleLogChange("wakeup", {
+                            ...wakeupLog,
+                            attended: true,
+                            recordedTime: time,
+                          });
+                        }}
+                        className="px-3 py-2 text-sm rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 font-medium w-fit"
+                      >
+                        Mark woken up
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <div className="mt-3 space-y-3">
                   <div className="flex flex-wrap gap-3">
                     <Link
@@ -1380,7 +1505,11 @@ export function DayScheduleDisplay({
                 <p className="font-mono text-sm font-extrabold text-slate-600">
                   {timeLabel}
                 </p>
-                <p className="font-extrabold text-slate-800">Free time</p>
+                <p
+                  className={`font-extrabold text-slate-800 ${freeTimeLog.missed ? "line-through" : ""}`}
+                >
+                  Free time
+                </p>
                 {renderFreeTimeBlockContent()}
               </li>
             );
@@ -1395,9 +1524,13 @@ export function DayScheduleDisplay({
                 className="rounded-lg p-4 bg-sky-blue/30 border border-sky-blue/50"
               >
                 <p className="font-mono text-sm font-extrabold text-slate-600">
-                  4:00 PM – 9:00 PM (all scheduled)
+                  4:00 PM – 11:59 PM (all scheduled)
                 </p>
-                <p className="font-extrabold text-slate-800">Free time</p>
+                <p
+                  className={`font-extrabold text-slate-800 ${freeTimeLog.missed ? "line-through" : ""}`}
+                >
+                  Free time
+                </p>
                 {renderFreeTimeBlockContent()}
               </li>
             );
@@ -1459,7 +1592,11 @@ export function DayScheduleDisplay({
                       <div>
                         <p className="font-mono text-sm font-extrabold text-slate-600">
                           {formatMealTimeForDisplay(block.timeStart)} –{" "}
-                          {formatMealTimeForDisplay(block.timeEnd)}
+                          {formatMealTimeForDisplay(
+                            blocksInFreeTime.some((b) => b.id === block.id)
+                              ? getBlockDisplayEnd(block)
+                              : block.timeEnd
+                          )}
                         </p>
                         <p className="font-extrabold text-slate-800">
                           {block.title}
@@ -1498,7 +1635,7 @@ export function DayScheduleDisplay({
             item.isBreak && item.options[0]?.name === "Coffee Break";
           const isDepart = item.options[0]?.name === "Depart";
           const blockMinutes = parseScheduleTimeToMinutes(item.time);
-          const isMissed =
+          const departBasedMissed =
             departRecordedMinutes !== null &&
             !isDepart &&
             blockMinutes >= departRecordedMinutes;
@@ -1507,6 +1644,7 @@ export function DayScheduleDisplay({
             notes: "",
             chosenOptionIndex: item.options.length > 1 ? undefined : 0,
           };
+          const isMissed = log.missed || departBasedMissed;
           const hasMultipleOptions = item.options.length > 1;
           const isGroupSaved =
             hasMultipleOptions &&
@@ -1531,7 +1669,9 @@ export function DayScheduleDisplay({
                   </p>
                   {item.options.length === 1 ? (
                     <>
-                      <p className="font-extrabold text-slate-800 flex items-center gap-2 flex-wrap">
+                      <p
+                        className={`font-extrabold text-slate-800 flex items-center gap-2 flex-wrap ${isMissed ? "line-through" : ""}`}
+                      >
                         {isMissed && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/90 text-white">
                             Missed
@@ -1550,9 +1690,9 @@ export function DayScheduleDisplay({
                                 recordedTime: "16:00",
                               });
                             }}
-                            className="px-3 py-2 text-sm rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 font-medium"
+                            className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
                           >
-                            Planned (4pm)
+                            4pm (planned)
                           </button>
                           <input
                             type="time"
@@ -1565,7 +1705,7 @@ export function DayScheduleDisplay({
                                 recordedTime: v,
                               });
                             }}
-                            className="px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80 text-sm"
+                            className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
                           />
                           <button
                             type="button"
@@ -1578,16 +1718,56 @@ export function DayScheduleDisplay({
                                 recordedTime: v,
                               });
                             }}
-                            className="px-3 py-2 text-sm rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 font-medium"
+                            className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
                           >
                             Now
                           </button>
                         </div>
                       )}
+                      {isSeeUnitScheduleItem(item) && onScheduleBlocksChange && (
+                        <div className="mt-3 flex flex-col gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (
+                                  seeUnitScheduleAddActivityItemId === item.id
+                                ) {
+                                  closeAddActivityForm();
+                                } else {
+                                  const { start, end } =
+                                    parseScheduleItemTimeToRange(item);
+                                  setFreeTimeActivityStart(start);
+                                  setFreeTimeActivityEnd(end);
+                                  setFreeTimeActivityTitle("");
+                                  setFreeTimeActivityNotes("");
+                                  setShowFreeTimeAddActivity(false);
+                                  setSeeUnitScheduleAddActivityItemId(item.id);
+                                }
+                              }}
+                              className={`px-3 py-2 text-sm ${buttonClass}`}
+                            >
+                              {seeUnitScheduleAddActivityItemId === item.id
+                                ? "Close activity"
+                                : "+ Add activity"}
+                            </button>
+                            <Link
+                              href="/self-care"
+                              className="text-sm text-slate-600 hover:text-thistle hover:underline"
+                            >
+                              Need activities?
+                            </Link>
+                          </div>
+                          {seeUnitScheduleAddActivityItemId === item.id &&
+                            renderAddActivityForm(closeAddActivityForm)}
+                        </div>
+                      )}
                     </>
                   ) : isGroupSaved && !isEditingGroup ? (
                     <div className="mt-2 flex items-center gap-2">
-                      <p className="font-extrabold text-slate-800 flex items-center gap-2 flex-wrap">
+                      <p
+                        className={`font-extrabold text-slate-800 flex items-center gap-2 flex-wrap ${isMissed ? "line-through" : ""}`}
+                      >
                         {isMissed && (
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-red-500/90 text-white">
                             Missed
@@ -1681,6 +1861,20 @@ export function DayScheduleDisplay({
                 </div>
                 {(!item.isBreak && !isDepart) || isDepart || isMissed || isCoffeeBreak ? (
                   <div className="flex items-center gap-2 shrink-0">
+                    {!isMissed && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleLogChange(item.id, {
+                            ...log,
+                            missed: true,
+                          })
+                        }
+                        className="px-3 py-2 text-sm rounded-lg border-2 border-red-300/60 bg-red-100/80 hover:bg-red-200/80 text-red-800 font-medium"
+                      >
+                        Mark missed
+                      </button>
+                    )}
                     {isMissed ? (
                       <button
                         type="button"
@@ -1762,7 +1956,7 @@ export function DayScheduleDisplay({
               ) : isLunch ? (
                 renderBlockAddMeal("lunch", "Lunch")
               ) : isDinner ? (
-                renderBlockAddMeal("dinner", "Dinner", undefined, "18:00")
+                renderBlockAddMeal("dinner", "Dinner", undefined, "17:30", undefined, "18:30")
               ) : isMissed ? (
                 editingNotesForItemId === item.id && (
                   <div className="mt-3">
@@ -1948,7 +2142,7 @@ export function DayScheduleDisplay({
                         <div>
                           <p className="font-mono text-sm font-extrabold text-slate-600">
                             {formatMealTimeForDisplay(block.timeStart)} –{" "}
-                            {formatMealTimeForDisplay(block.timeEnd)}
+                            {formatMealTimeForDisplay(getBlockDisplayEnd(block))}
                           </p>
                           <p className="font-extrabold text-slate-800">
                             {block.title}
@@ -1977,8 +2171,48 @@ export function DayScheduleDisplay({
               );
             })}
         <li className="rounded-lg p-4 bg-icy-blue/40 border border-icy-blue/60">
-          <p className="font-mono text-sm text-slate-600">10:00 PM</p>
-          <p className="font-extrabold text-slate-800">Bedtime</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex-1">
+              <p className="font-mono text-sm font-extrabold text-slate-600">
+                {formatMealTimeForDisplay(bedtimeTime ?? "22:00")}
+              </p>
+              <p className="font-extrabold text-slate-800">Bedtime</p>
+            </div>
+            {onWeekendTimesChange && (
+              <div className="flex flex-wrap items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onWeekendTimesChange({ bedtimeTime: "22:00" })
+                  }
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                >
+                  10pm (planned)
+                </button>
+                <input
+                  type="time"
+                  value={bedtimeTime ?? ""}
+                  onChange={(e) =>
+                    onWeekendTimesChange({
+                      bedtimeTime: e.target.value || null,
+                    })
+                  }
+                  className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const now = new Date();
+                    const v = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+                    onWeekendTimesChange({ bedtimeTime: v });
+                  }}
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                >
+                  Now
+                </button>
+              </div>
+            )}
+          </div>
           <div className="mt-3 space-y-3">
             <Link
               href="/routine/bedtime"

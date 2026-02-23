@@ -40,9 +40,9 @@ export function MealSummaryContent({ meal }: MealSummaryContentProps) {
     meal.mealTime !== endTime;
   const timeStr = meal.mealTime
     ? showRange
-      ? ` (${formatTimeForDisplay(meal.mealTime)} – ${formatTimeForDisplay(endTime)})`
-      : ` (${formatTimeForDisplay(meal.mealTime)})`
-    : "";
+      ? ` · ${formatTimeForDisplay(meal.mealTime)} – ${formatTimeForDisplay(endTime)}`
+      : ` · ${formatTimeForDisplay(meal.mealTime)}`
+    : " · —";
 
   return (
     <div className="min-w-0 flex-1">

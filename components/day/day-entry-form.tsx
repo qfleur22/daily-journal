@@ -32,7 +32,7 @@ export function DayEntryForm({
             id: "free-time",
             name: "Free time",
             startTime: "16:00",
-            endTime: "21:00",
+            endTime: "23:59",
           },
         ]
       : hopewaySchedule;
@@ -139,6 +139,7 @@ export function DayEntryForm({
         weekendWakeupTime={entry.weekendWakeupTime}
         weekendLunchTime={entry.weekendLunchTime}
         weekendDinnerTime={entry.weekendDinnerTime}
+        bedtimeTime={entry.bedtimeTime}
         onWeekendTimesChange={(updates) => onUpdate(updates)}
         morningRoutine={entry.morningRoutine}
         bedtimeRoutine={entry.bedtimeRoutine}

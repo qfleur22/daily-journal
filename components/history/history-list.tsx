@@ -11,6 +11,7 @@ import {
 } from "@/models/day-entry";
 import { formatTimeForDisplay } from "@/utils/format-time";
 import { MealSummaryContent } from "@/components/day/meal-summary";
+import { sortMealsByTime } from "@/utils/sort-meals";
 
 const BURNOUT_STAGE_STYLES: Record<BurnoutStage, string> = {
   Green: "border-green-400 bg-green-50 text-green-800",
@@ -230,7 +231,7 @@ function HistoryEntryCard({ entry, onNavigate }: HistoryEntryCardProps) {
                 Meals
               </h3>
               <ul className="text-sm space-y-2">
-                {meals.map((meal) => (
+                {sortMealsByTime(meals).map((meal) => (
                   <li key={meal.id} className="rounded-lg border border-thistle/40 p-3 bg-white/50">
                     <MealSummaryContent meal={meal} />
                   </li>

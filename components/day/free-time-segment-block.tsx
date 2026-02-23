@@ -152,17 +152,24 @@ export function FreeTimeSegmentBlock({
           <div className="flex gap-3 items-center">
             <div className="flex-1">
               <label className="block text-xs text-slate-500 mb-0.5">Start</label>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActivityTimeStart("16:00")}
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                >
+                  4pm (planned)
+                </button>
                 <input
                   type="time"
                   value={activityTimeStart}
                   onChange={(e) => setActivityTimeStart(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80"
+                  className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setActivityTimeStart(formatTimeNow())}
-                  className="px-2 py-2 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium shrink-0"
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
                 >
                   Now
                 </button>
@@ -170,17 +177,24 @@ export function FreeTimeSegmentBlock({
             </div>
             <div className="flex-1">
               <label className="block text-xs text-slate-500 mb-0.5">End</label>
-              <div className="flex gap-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setActivityTimeEnd("22:00")}
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
+                >
+                  10pm (planned)
+                </button>
                 <input
                   type="time"
                   value={activityTimeEnd}
                   onChange={(e) => setActivityTimeEnd(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-lg border-2 border-thistle/50 bg-white/80"
+                  className="px-2 py-1 rounded border-2 border-thistle/50 bg-white/80 text-sm"
                 />
                 <button
                   type="button"
                   onClick={() => setActivityTimeEnd(formatTimeNow())}
-                  className="px-2 py-2 rounded-lg border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800 text-sm font-medium shrink-0"
+                  className="px-2 py-1 text-xs rounded border-2 border-thistle/50 bg-thistle hover:bg-thistle/80 text-slate-800"
                 >
                   Now
                 </button>

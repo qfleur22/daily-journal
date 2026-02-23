@@ -50,6 +50,7 @@ export interface DayEntry {
   weekendWakeupTime: string | null;
   weekendLunchTime: string | null;
   weekendDinnerTime: string | null;
+  bedtimeTime: string | null;
   meals: Meal[];
   schedule: ScheduleGroup[];
   scheduleChoices: Record<string, string>;

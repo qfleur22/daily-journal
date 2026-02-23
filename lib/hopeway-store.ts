@@ -6,6 +6,7 @@ export interface GroupLog {
   attended: boolean;
   notes: string;
   recordedTime?: string;
+  missed?: boolean;
 }
 
 export interface DayLog {

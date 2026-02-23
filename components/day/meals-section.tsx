@@ -5,6 +5,7 @@ import { type Meal } from "@/models/day-entry";
 import { MealLog } from "@/components/day/meal-log";
 import { MealSummaryContent } from "@/components/day/meal-summary";
 import { createMeal } from "@/utils/create-meal";
+import { sortMealsByTime } from "@/utils/sort-meals";
 
 interface MealsSectionProps {
   meals: Meal[];
@@ -72,7 +73,7 @@ export function MealsSection({
         </p>
       ) : (
         <div className="space-y-3">
-          {meals.map((meal) => (
+          {sortMealsByTime(meals).map((meal) => (
             <div
               key={meal.id}
               className="rounded-lg border-2 border-thistle/40 p-4 bg-white/60"

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createOrGetTodayEntry, updateEntry } from "@/lib/day-store";
 import { DayEntry } from "@/models/day-entry";
 import { DayEntryForm } from "@/components/day/day-entry-form";
@@ -46,6 +47,14 @@ export function HomeCheckIn() {
 
   return (
     <div className="relative pb-16">
+      <div className="flex justify-end mb-4">
+        <Link
+          href={`/day/date/${today}/edit`}
+          className="text-sm text-slate-600 hover:text-thistle hover:underline"
+        >
+          Open full entry →
+        </Link>
+      </div>
       <DayEntryForm
         entry={entry}
         onUpdate={handleUpdate}

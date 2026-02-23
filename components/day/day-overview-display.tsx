@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { DayEntry, type BurnoutStage } from "@/models/day-entry";
 import { MealSummaryContent } from "@/components/day/meal-summary";
+import { sortMealsByTime } from "@/utils/sort-meals";
 
 const ROUTINE_TIER_LABELS: Record<number, string> = {
   0: "low spoons",
@@ -243,7 +244,7 @@ export function DayOverviewDisplay({
         <div className="mt-4 pt-4 border-t border-thistle/40">
           <dt className="text-sm text-slate-600 mb-3">Meals</dt>
           <dd className="space-y-4">
-            {entry.meals?.map((meal) => (
+            {sortMealsByTime(entry.meals ?? []).map((meal) => (
               <div
                 key={meal.id}
                 className="rounded-lg border border-thistle/40 p-3 bg-white/50"
